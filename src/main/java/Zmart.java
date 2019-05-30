@@ -7,10 +7,7 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.Consumed;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.Printed;
-import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.kstream.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,13 +81,33 @@ public class Zmart {
         stringRewardAccumulatorKStream.to("rewards", Produced.with(stringSerde, rewardAccumulatorSerde));
 
         // Store raw masked data
-        maskedPurchaseStream.to("purchases", Produced.with(stringSerde, purchaseSerde));
+        KeyValueMapper<String, Purchase, Long> purchaseDateAsKey = (key, purchase) -> purchase.getPurchaseDate().getTime();
+        KStream<Long, Purchase> longPurchaseKStream = maskedPurchaseStream.filter((key, purchase) -> purchase.getPrice() > 5.00).selectKey(purchaseDateAsKey);
+        longPurchaseKStream.to("purchases", Produced.with(Serdes.serdeFrom(Long.class), purchaseSerde));
+
+//        maskedPurchaseStream.to("purchases", Produced.with(stringSerde, purchaseSerde));
 
 
-        stringPurchasePatternKStream.print(Printed.<String,PurchasePattern>toSysOut().withLabel("purchasePatterns"));
-        stringRewardAccumulatorKStream.print(Printed.<String,RewardAccumulator>toSysOut().withLabel("rewardAccumulator"));
-        maskedPurchaseStream.print(Printed.<String,Purchase>toSysOut().withLabel("purchases"));
+        stringPurchasePatternKStream.print(Printed.<String, PurchasePattern>toSysOut().withLabel("purchasePatterns"));
+        stringRewardAccumulatorKStream.print(Printed.<String, RewardAccumulator>toSysOut().withLabel("rewardAccumulator"));
+        longPurchaseKStream.print(Printed.<Long, Purchase>toSysOut().withLabel("purchases"));
 
+
+        // Move purchases depending on departments name to different topics
+
+        Predicate<String, Purchase> coffeePredicate = (key, purchase) -> purchase.getDepartment().equalsIgnoreCase("coffee");
+        Predicate<String, Purchase> electronicsPredicate = (key, purchase) -> purchase.getDepartment().equalsIgnoreCase("electronics");
+
+        int coffee = 0;
+        int electronics = 1;
+        KStream<String, Purchase>[] kstreamByDept  = maskedPurchaseStream.branch(coffeePredicate, electronicsPredicate);
+
+        kstreamByDept[coffee].filter(coffeePredicate).to("coffee",Produced.with(stringSerde,purchaseSerde));
+        kstreamByDept[electronics].filter(electronicsPredicate).to("electronics",Produced.with(stringSerde,purchaseSerde));
+
+        kstreamByDept[coffee].print(Printed.<String,Purchase>toSysOut().withLabel("Coffe"));
+        kstreamByDept[electronics].print(Printed.<String,Purchase>toSysOut().withLabel("Electronics"));
+        //
         KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), props);
         LOG.info("Zmart App Started");
         kafkaStreams.start();
