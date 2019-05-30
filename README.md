@@ -15,6 +15,10 @@ What things you need to install the software and how to install them
 Kafka Server, Zookeeper, Min Java 8+, Maven
 ```
 
+### Scope
+
+Mask Purchase credit card, create 3 flows (store raw (masked) data, add reward acumulator, purchase patterns)
+
 ### Example json data for producers
 
 {"firstName":"Cody","lastName":"Rempel","customerId":"000-33-5185","creditCardNumber":"6771-8965-2901-8520","itemPurchased":"Dark Roast","department":"Coffee","employeeId":"55014","quantity":1,"price":3.35,"purchaseDate":"May 30, 2019 12:16:38 PM","zipCode":"334457","storeId":"236161"} 
