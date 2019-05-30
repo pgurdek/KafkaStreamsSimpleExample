@@ -108,6 +108,18 @@ public class Zmart {
         kstreamByDept[coffee].print(Printed.<String,Purchase>toSysOut().withLabel("Coffe"));
         kstreamByDept[electronics].print(Printed.<String,Purchase>toSysOut().withLabel("Electronics"));
         //
+        //outside kafka
+        ForeachAction<String, Purchase> purchaseForeachAction = (key, purchase) ->
+                SecurityDBService.saveRecord(purchase.getPurchaseDate(),
+                        purchase.getEmployeeId(), purchase.getItemPurchased());
+
+        Predicate<String,Purchase> singleEmploy = (key,purchase) -> purchase.getEmployeeId().equalsIgnoreCase("50");
+        maskedPurchaseStream
+                .filter(singleEmploy)
+                .foreach(purchaseForeachAction);
+
+
+        //
         KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), props);
         LOG.info("Zmart App Started");
         kafkaStreams.start();

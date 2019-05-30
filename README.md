@@ -17,7 +17,7 @@ Kafka Server, Zookeeper, Min Java 8+, Maven
 
 ### Scope
 
-Mask Purchase credit card, create 3 flows (store raw (masked) data, add reward acumulator, purchase patterns)
+Filter all employed with id 50 and save them to db (dummy )
 
 ### Example json data for producers
 
