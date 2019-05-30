@@ -1,6 +1,7 @@
-# Project Title
 
-One Paragraph of project description goes here
+# KafkaStreamsSimpleExample
+
+Simple application to show usage of Kafka Streams and it's dsl
 
 ## Getting Started
 
@@ -11,77 +12,12 @@ These instructions will get you a copy of the project up and running on your loc
 What things you need to install the software and how to install them
 
 ```
-Give examples
+Kafka Server, Zookeeper, Min Java 8+, Maven
 ```
 
-### Installing
+### Example json data for producers
 
-A step by step series of examples that tell you how to get a development env running
+{"firstName":"Cody","lastName":"Rempel","customerId":"000-33-5185","creditCardNumber":"6771-8965-2901-8520","itemPurchased":"Dark Roast","department":"Coffee","employeeId":"55014","quantity":1,"price":3.35,"purchaseDate":"May 30, 2019 12:16:38 PM","zipCode":"334457","storeId":"236161"} 
 
-Say what the step will be
+{"firstName":"Piotr","lastName":"Gurdek","customerId":"pgurde","creditCardNumber":"2040-2200-5000-1212","itemPurchased":"PC new Generation","quantity":2,"price":7000.00,"purchaseDate":"2012-04-23T18:25:43.511Z","zipCode":"340-100","department":"IT","employeeId":"50","storeId":"40"}
 
-```
-Give the example
-```
-
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
