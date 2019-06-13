@@ -1,4 +1,4 @@
-/*
+package dto;/*
  * Copyright 2016 Bill Bejeck
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,7 +63,7 @@ public class PurchasePattern {
 
     @Override
     public String toString() {
-        return "PurchasePattern{" +
+        return "dto.PurchasePattern{" +
                 "zipCode='" + zipCode + '\'' +
                 ", item='" + item + '\'' +
                 ", date=" + date +

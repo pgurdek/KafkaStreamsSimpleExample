@@ -1,6 +1,8 @@
+import dto.Purchase;
+import dto.PurchasePattern;
+import dto.RewardAccumulator;
 import json_serializers.JsonDeserializer;
 import json_serializers.JsonDeserializerGson;
-import json_serializers.JsonSerializer;
 import json_serializers.JsonSerlizerGson;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -8,8 +10,14 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.*;
+import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
+import org.apache.kafka.streams.state.KeyValueStore;
+import org.apache.kafka.streams.state.StoreBuilder;
+import org.apache.kafka.streams.state.Stores;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import streampartitioners.RewardsStreamPartitioner;
+import transformers.PurchaseRewardTransformer;
 
 import java.util.Properties;
 
@@ -33,27 +41,23 @@ public class Zmart {
 //                "\"employeeId\": \"50\",\n" +
 //                "\"storeId\": \"40\"\n" +
 //                "}";
-//        JsonDeserializerGson<Purchase> purchaseJsonSerializer = new JsonDeserializerGson<>();
-//        byte[] serialize = purchaseJsonSerializer.serialize(purchaseJson);
-//        JsonDeserializer<Purchase> purchaseJsonDeserializer = new JsonDeserializer<>(Purchase.class);
 
-//            purchaseJsonDeserializer.deserialize()
-//        JsonSerlizerGson<Purchase> purchaseJsonSerializer = new JsonSerlizerGson<>();
-//        JsonSerlizerGson<PurchasePattern> purchasePatternJsonSerializer = new JsonSerlizerGson<>();
-//        JsonSerlizerGson<RewardAccumulator> rewardAccumulatorJsonSerializer = new JsonSerlizerGson<>();
+        JsonSerlizerGson<Purchase> purchaseJsonSerializer = new JsonSerlizerGson<>();
+        JsonSerlizerGson<PurchasePattern> purchasePatternJsonSerializer = new JsonSerlizerGson<>();
+        JsonSerlizerGson<RewardAccumulator> rewardAccumulatorJsonSerializer = new JsonSerlizerGson<>();
+
+        JsonDeserializerGson<Purchase> purchaseJsonDeserializer = new JsonDeserializerGson<>(Purchase.class);
+        JsonDeserializerGson<PurchasePattern> purchasePatternJsonDeserializer = new JsonDeserializerGson<>(PurchasePattern.class);
+        JsonDeserializerGson<RewardAccumulator> rewardAccumulatorJsonDeserializer = new JsonDeserializerGson<>(RewardAccumulator.class);
+
 //
-//        JsonDeserializerGson<Purchase> purchaseJsonDeserializer = new JsonDeserializerGson<>(Purchase.class);
-//        JsonDeserializerGson<PurchasePattern> purchasePatternJsonDeserializer = new JsonDeserializerGson<>(PurchasePattern.class);
-//        JsonDeserializerGson<RewardAccumulator> rewardAccumulatorJsonDeserializer = new JsonDeserializerGson<>(RewardAccumulator.class);
-
-
-        JsonSerializer<Purchase> purchaseJsonSerializer = new JsonSerializer<>();
-        JsonSerializer<PurchasePattern> purchasePatternJsonSerializer = new JsonSerializer<>();
-        JsonSerializer<RewardAccumulator> rewardAccumulatorJsonSerializer = new JsonSerializer<>();
-
-        JsonDeserializer<Purchase> purchaseJsonDeserializer = new JsonDeserializer<>(Purchase.class);
-        JsonDeserializer<PurchasePattern> purchasePatternJsonDeserializer = new JsonDeserializer<>(PurchasePattern.class);
-        JsonDeserializer<RewardAccumulator> rewardAccumulatorJsonDeserializer = new JsonDeserializer<>(RewardAccumulator.class);
+//        JsonSerializer<Purchase> purchaseJsonSerializer = new JsonSerializer<>();
+//        JsonSerializer<PurchasePattern> purchasePatternJsonSerializer = new JsonSerializer<>();
+//        JsonSerializer<RewardAccumulator> rewardAccumulatorJsonSerializer = new JsonSerializer<>();
+//
+//        JsonDeserializer<Purchase> purchaseJsonDeserializer = new JsonDeserializer<>(Purchase.class);
+//        JsonDeserializer<PurchasePattern> purchasePatternJsonDeserializer = new JsonDeserializer<>(PurchasePattern.class);
+//        JsonDeserializer<RewardAccumulator> rewardAccumulatorJsonDeserializer = new JsonDeserializer<>(RewardAccumulator.class);
 
 
         Serde<Purchase> purchaseSerde = Serdes.serdeFrom(purchaseJsonSerializer, purchaseJsonDeserializer);
@@ -63,6 +67,7 @@ public class Zmart {
         Properties props = new Properties();
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "zmart_app_id");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(StreamsConfig.METADATA_MAX_AGE_CONFIG, "1000");
 
         Serde<String> stringSerde = Serdes.String();
 
@@ -76,20 +81,32 @@ public class Zmart {
         KStream<String, PurchasePattern> stringPurchasePatternKStream = maskedPurchaseStream.mapValues(maskedPurchase -> PurchasePattern.builder(maskedPurchase).build());
         stringPurchasePatternKStream.to("patterns", Produced.with(stringSerde, purchasePatternsSerde));
 
-        //Reward Accumulator
-        KStream<String, RewardAccumulator> stringRewardAccumulatorKStream = maskedPurchaseStream.mapValues(maskedPurchase -> RewardAccumulator.builder(maskedPurchase).build());
-        stringRewardAccumulatorKStream.to("rewards", Produced.with(stringSerde, rewardAccumulatorSerde));
+        // adding State to processor
+        String rewardsStateStoreName = "rewardsPointsStore";
+        RewardsStreamPartitioner streamPartitioner = new RewardsStreamPartitioner();
 
-        // Store raw masked data
+        KeyValueBytesStoreSupplier storeSupplier = Stores.inMemoryKeyValueStore(rewardsStateStoreName);
+        StoreBuilder<KeyValueStore<String, Integer>> storeBuilder = Stores.keyValueStoreBuilder(storeSupplier, Serdes.String(), Serdes.Integer());
+
+        builder.addStateStore(storeBuilder);
+
+        KStream<String, Purchase> transByCustomerStream = purchaseKStream.through( "customer_transactions", Produced.with(stringSerde, purchaseSerde, streamPartitioner));
+
+
+        KStream<String, RewardAccumulator> statefulRewardAccumulator = transByCustomerStream.transformValues(() ->  new PurchaseRewardTransformer(rewardsStateStoreName),
+                rewardsStateStoreName);
+
+        statefulRewardAccumulator.to("rewards", Produced.with(stringSerde, rewardAccumulatorSerde));
+
+
         KeyValueMapper<String, Purchase, Long> purchaseDateAsKey = (key, purchase) -> purchase.getPurchaseDate().getTime();
         KStream<Long, Purchase> longPurchaseKStream = maskedPurchaseStream.filter((key, purchase) -> purchase.getPrice() > 5.00).selectKey(purchaseDateAsKey);
-        longPurchaseKStream.to("purchases", Produced.with(Serdes.serdeFrom(Long.class), purchaseSerde));
 
-//        maskedPurchaseStream.to("purchases", Produced.with(stringSerde, purchaseSerde));
+        longPurchaseKStream.to("purchases", Produced.with(Serdes.serdeFrom(Long.class), purchaseSerde));
 
 
         stringPurchasePatternKStream.print(Printed.<String, PurchasePattern>toSysOut().withLabel("purchasePatterns"));
-        stringRewardAccumulatorKStream.print(Printed.<String, RewardAccumulator>toSysOut().withLabel("rewardAccumulator"));
+        statefulRewardAccumulator.print(Printed.<String, RewardAccumulator>toSysOut().withLabel("rewardAccumulator"));
         longPurchaseKStream.print(Printed.<Long, Purchase>toSysOut().withLabel("purchases"));
 
 

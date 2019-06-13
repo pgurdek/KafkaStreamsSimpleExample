@@ -1,3 +1,5 @@
+package dto;
+
 import java.util.Date;
 import java.util.Objects;
 
@@ -149,7 +151,7 @@ public class Purchase {
 
     @Override
     public String toString() {
-        return "Purchase{" +
+        return "dto.Purchase{" +
                 "firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", customerId='" + customerId + '\'' +

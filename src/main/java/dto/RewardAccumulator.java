@@ -1,4 +1,4 @@
-/*
+package dto;/*
  * Copyright 2016 Bill Bejeck
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,7 +56,7 @@ public class RewardAccumulator {
 
     @Override
     public String toString() {
-        return "RewardAccumulator{" +
+        return "dto.RewardAccumulator{" +
                 "customerId='" + customerId + '\'' +
                 ", purchaseTotal=" + purchaseTotal +
                 ", totalRewardPoints=" + totalRewardPoints +
