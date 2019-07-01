@@ -2,6 +2,8 @@ import dto.Purchase;
 import dto.PurchaseCounter;
 import dto.PurchasePattern;
 import dto.RewardAccumulator;
+import joins.CorrelatedPurchase;
+import joins.PurchaseJoiner;
 import json_serializers.JsonDeserializerGson;
 import json_serializers.JsonSerlizerGson;
 import org.apache.kafka.common.serialization.Serde;
@@ -20,6 +22,7 @@ import streampartitioners.RewardsStreamPartitioner;
 import transformers.PurchaseCounterTransformer;
 import transformers.PurchaseRewardTransformer;
 
+import java.time.Duration;
 import java.util.Properties;
 
 public class Zmart {
@@ -134,15 +137,25 @@ public class Zmart {
         Predicate<String, Purchase> coffeePredicate = (key, purchase) -> purchase.getDepartment().equalsIgnoreCase("coffee");
         Predicate<String, Purchase> electronicsPredicate = (key, purchase) -> purchase.getDepartment().equalsIgnoreCase("electronics");
 
+
+        /// Purchase Join
         int coffee = 0;
         int electronics = 1;
-        KStream<String, Purchase>[] kstreamByDept  = maskedPurchaseStream.branch(coffeePredicate, electronicsPredicate);
+        KStream<String, Purchase>[] kstreamByDept  = maskedPurchaseStream.selectKey((k,v) -> v.getCustomerId()).branch(coffeePredicate, electronicsPredicate);
+        ValueJoiner<Purchase,Purchase, CorrelatedPurchase> purchaseJoiner = new PurchaseJoiner();
+        JoinWindows twentyMintueWindows = JoinWindows.of(Duration.ofMinutes(20L));
+        KStream<String, Purchase> coffeeKStream = kstreamByDept[coffee];
+        coffeeKStream.filter(coffeePredicate).to("coffee",Produced.with(stringSerde,purchaseSerde));
+        KStream<String, Purchase> electronicsKStream = kstreamByDept[electronics];
+        electronicsKStream.filter(electronicsPredicate).to("electronics",Produced.with(stringSerde,purchaseSerde));
 
-        kstreamByDept[coffee].filter(coffeePredicate).to("coffee",Produced.with(stringSerde,purchaseSerde));
-        kstreamByDept[electronics].filter(electronicsPredicate).to("electronics",Produced.with(stringSerde,purchaseSerde));
+        KStream<String, CorrelatedPurchase> joinedKStream = coffeeKStream.outerJoin(electronicsKStream, purchaseJoiner, twentyMintueWindows, Joined.with(stringSerde, purchaseSerde, purchaseSerde));
+//        KStream<String, CorrelatedPurchase> joinedKStream = coffeeKStream.join(electronicsKStream, purchaseJoiner, twentyMintueWindows, Joined.with(stringSerde, purchaseSerde, purchaseSerde));
+//        KStream<String, CorrelatedPurchase> joinedKStream = coffeeKStream.join(electronicsKStream, purchaseJoiner, twentyMintueWindows, Joined.with(stringSerde, purchaseSerde, purchaseSerde));
 
-        kstreamByDept[coffee].print(Printed.<String,Purchase>toSysOut().withLabel("Coffe"));
-        kstreamByDept[electronics].print(Printed.<String,Purchase>toSysOut().withLabel("Electronics"));
+        coffeeKStream.print(Printed.<String,Purchase>toSysOut().withLabel("Coffe"));
+        electronicsKStream.print(Printed.<String,Purchase>toSysOut().withLabel("Electronics"));
+        joinedKStream.print(Printed.<String,CorrelatedPurchase>toSysOut().withLabel("CorrelatedPurchase"));
         //
         //outside kafka
         ForeachAction<String, Purchase> purchaseForeachAction = (key, purchase) ->
