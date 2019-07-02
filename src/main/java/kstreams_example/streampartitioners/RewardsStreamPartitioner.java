@@ -1,6 +1,6 @@
-package streampartitioners;
+package kstreams_example.streampartitioners;
 
-import dto.Purchase;
+import kstreams_example.dto.Purchase;
 import org.apache.kafka.streams.processor.StreamPartitioner;
 
 public class RewardsStreamPartitioner implements StreamPartitioner<String,Purchase> {

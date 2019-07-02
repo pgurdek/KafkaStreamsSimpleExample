@@ -1,4 +1,4 @@
-package dto;
+package kstreams_example.dto;
 
 import java.util.Date;
 import java.util.Objects;
@@ -151,7 +151,7 @@ public class Purchase {
 
     @Override
     public String toString() {
-        return "dto.Purchase{" +
+        return "kstreams_example.dto.Purchase{" +
                 "firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", customerId='" + customerId + '\'' +

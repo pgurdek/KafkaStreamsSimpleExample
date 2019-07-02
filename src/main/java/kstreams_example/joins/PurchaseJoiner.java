@@ -1,6 +1,6 @@
-package joins;
+package kstreams_example.joins;
 
-import dto.Purchase;
+import kstreams_example.dto.Purchase;
 import org.apache.kafka.streams.kstream.ValueJoiner;
 
 import java.util.ArrayList;

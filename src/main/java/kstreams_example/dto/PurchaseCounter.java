@@ -1,4 +1,4 @@
-package dto;
+package kstreams_example.dto;
 
 public class PurchaseCounter {
 

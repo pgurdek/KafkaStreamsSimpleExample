@@ -1,3 +1,5 @@
+package kstreams_example;
+
 import java.util.Date;
 
 public class SecurityDBService {

@@ -1,9 +1,11 @@
-import dto.Purchase;
-import dto.PurchaseCounter;
-import dto.PurchasePattern;
-import dto.RewardAccumulator;
-import joins.CorrelatedPurchase;
-import joins.PurchaseJoiner;
+package kstreams_example;
+
+import kstreams_example.dto.Purchase;
+import kstreams_example.dto.PurchaseCounter;
+import kstreams_example.dto.PurchasePattern;
+import kstreams_example.dto.RewardAccumulator;
+import kstreams_example.joins.CorrelatedPurchase;
+import kstreams_example.joins.PurchaseJoiner;
 import json_serializers.JsonDeserializerGson;
 import json_serializers.JsonSerlizerGson;
 import org.apache.kafka.common.serialization.Serde;
@@ -18,9 +20,9 @@ import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import streampartitioners.RewardsStreamPartitioner;
-import transformers.PurchaseCounterTransformer;
-import transformers.PurchaseRewardTransformer;
+import kstreams_example.streampartitioners.RewardsStreamPartitioner;
+import kstreams_example.transformers.PurchaseCounterTransformer;
+import kstreams_example.transformers.PurchaseRewardTransformer;
 
 import java.time.Duration;
 import java.util.Properties;
@@ -171,10 +173,10 @@ public class Zmart {
         //
         KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), props);
         kafkaStreams.cleanUp();
-        LOG.info("Zmart App Started");
+        LOG.info("kstreams_example.Zmart App Started");
         kafkaStreams.start();
         Thread.sleep(135000);
-        LOG.info("Shutting down the Zmart APP now");
+        LOG.info("Shutting down the kstreams_example.Zmart APP now");
         kafkaStreams.close();
     }
 

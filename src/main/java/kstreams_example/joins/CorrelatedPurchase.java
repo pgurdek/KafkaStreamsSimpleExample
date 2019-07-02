@@ -1,4 +1,4 @@
-package joins;
+package kstreams_example.joins;
 
 import java.util.Date;
 import java.util.List;

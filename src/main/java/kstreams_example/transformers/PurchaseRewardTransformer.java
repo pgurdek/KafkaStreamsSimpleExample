@@ -1,7 +1,7 @@
-package transformers;
+package kstreams_example.transformers;
 
-import dto.Purchase;
-import dto.RewardAccumulator;
+import kstreams_example.dto.Purchase;
+import kstreams_example.dto.RewardAccumulator;
 import org.apache.kafka.streams.kstream.ValueTransformer;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.KeyValueStore;

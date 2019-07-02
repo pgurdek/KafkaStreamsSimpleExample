@@ -1,4 +1,4 @@
-package dto;/*
+package kstreams_example.dto;/*
  * Copyright 2016 Bill Bejeck
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,7 +56,7 @@ public class RewardAccumulator {
 
     @Override
     public String toString() {
-        return "dto.RewardAccumulator{" +
+        return "kstreams_example.dto.RewardAccumulator{" +
                 "customerId='" + customerId + '\'' +
                 ", purchaseTotal=" + purchaseTotal +
                 ", totalRewardPoints=" + totalRewardPoints +
